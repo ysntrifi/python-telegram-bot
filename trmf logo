@@ -1,0 +1,48 @@
+import logging
+from telegram import Bot
+from telegram.ext import Updater, MessageHandler, Filters
+import cv2
+
+# تكوين السجل
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# تعيين معطيات البوت
+BOT_TOKEN = "7130786652:AAGoc7HxGZL3kYcQ3kN8zCkNwtSJz8ax6eo"
+
+# تكوين البوت
+bot = Bot(BOT_TOKEN)
+updater = Updater(BOT_TOKEN, use_context=True)
+dispatcher = updater.dispatcher
+
+# تعيين معالج الصور
+def process_image(update, context):
+    # استخراج الصورة المرسلة
+    photo_file = context.bot.getFile(update.message.photo[-1].file_id)
+    photo_path = photo_file.download('user_photo.jpg')
+
+    # قم بتحميل اللوجو وتحميل الصورة المستخدم
+    logo = cv2.imread('LogoTrmf.png')
+    image = cv2.imread(photo_path)
+
+    # حساب أبعاد اللوجو والصورة المستخدم
+    logo_height, logo_width, _ = logo.shape
+    height, width, _ = image.shape
+
+    # ضع اللوجو على الصورة
+    # يمكنك تعديل الإجراءات حسب متطلبات اللوجو والصورة
+    # هنا يتم وضع اللوجو في الزاوية اليمنى السفلى للصورة كمثال
+    image[height - logo_height:height, width - logo_width:width] = logo
+
+    # حفظ الصورة المعدلة
+    cv2.imwrite('processed_image.jpg', image)
+
+    # إرسال الصورة المعدلة إلى المستخدم
+    update.message.reply_photo(open('processed_image.jpg', 'rb'))
+
+# تسجيل معالج الصور
+dispatcher.add_handler(MessageHandler(Filters.photo, process_image))
+
+# تشغيل البوت
+updater.start_polling()
+updater.idle()
